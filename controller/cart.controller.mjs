@@ -4,28 +4,22 @@ import { productCollection } from "../model/product.model.mjs";
 
 export const addToCart = async (req, res) => {
     try {
-        const { name, quantity } = req.body;
-        const userId = req.user._id;
+        const { productId, quantity,userId } = req.body;
 
-        // Find the product by name (instead of by ID)
-        const product = await productCollection.findOne({ name });
+        const product = await productCollection.findOne({ _id: productId });
         if (!product) {
             return res.status(404).send({ message: "Product not found" });
         }
 
-        let cartItem = await cartCollection.findOne({ userId, productId: product._id });
+        let cartItem = await cartCollection.findOne({ userId, productId });
 
         if (cartItem) {
-            // If product already in cart, update quantity
             cartItem.quantity += quantity;
             await cartItem.save();
-            // Populate the product data (e.g., name)
             await cartItem.populate('productId');
             return res.status(200).send({ message: "Cart updated", cartItem });
         } else {
-            // If product not in cart, add it
-            const newCartItem = await cartCollection.create({ userId, productId: product._id, quantity });
-            // Populate the product data (e.g., name)
+            const newCartItem = await cartCollection.create({ userId, productId, quantity });
             await newCartItem.populate('productId');
             return res.status(201).send({ message: "Product added to cart", newCartItem });
         }
@@ -33,9 +27,10 @@ export const addToCart = async (req, res) => {
         return res.status(500).send({ message: err.message || "Internal server error" });
     }
 };
+
 export const getCart = async (req, res) => {
     try {
-        const userId = req.user._id;
+        const { userId} = req.body;
         const cartItems = await cartCollection.find({ userId }).populate('productId');
         
         if (cartItems.length === 0) {
@@ -50,8 +45,8 @@ export const getCart = async (req, res) => {
 
 export const updateCart = async (req, res) => {
     try {
-        const { productId, quantity } = req.body;
-        const userId = req.user._id;
+        const {userId, productId, quantity } = req.body;
+       
 
         const cartItem = await cartCollection.findOne({ userId, productId });
         if (!cartItem) {
@@ -69,8 +64,8 @@ export const updateCart = async (req, res) => {
 
 export const removeFromCart = async (req, res) => {
     try {
-        const { productId } = req.body;
-        const userId = req.user._id;
+        const { productId,userId } = req.body;
+     ;
 
         const cartItem = await cartCollection.findOneAndDelete({ userId, productId });
         if (!cartItem) {
